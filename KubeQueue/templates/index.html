@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KubeQueue | Smart Queue Management</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <div><div class="eyebrow">CNAD PROJECT · LIVE PROTOTYPE</div><h1>KubeQueue</h1><p>Cloud-Native Smart Queue Management System</p></div>
+  <div class="status-pill"><span class="pulse"></span> System operational</div>
+</header>
+<main>
+  <section class="hero">
+    <div><span class="tag">PREDICT · PRIORITIZE · SCALE</span><h2>Make queues respond to demand.</h2>
+    <p>Observe backlog, forecast incoming work, prioritize critical tasks, and simulate cost-aware consumer scaling.</p></div>
+    <div class="hero-stat"><span>Current consumer replicas</span><strong id="replicas">1</strong><small id="scaleReason">Waiting for metrics…</small></div>
+  </section>
+  <section class="metrics">
+    <article class="metric"><span>Queue depth</span><strong id="depth">0</strong><small>Tasks waiting</small></article>
+    <article class="metric"><span>Processed tasks</span><strong id="processed">0</strong><small>Completed successfully</small></article>
+    <article class="metric"><span>Forecast arrivals</span><strong id="forecast">0</strong><small>Moving-average estimate</small></article>
+    <article class="metric"><span>Throughput</span><strong><span id="throughput">0</span></strong><small>Tasks per minute</small></article>
+  </section>
+  <section class="grid two">
+    <article class="panel">
+      <div class="panel-head"><div><h3>Submit a task</h3><p>Choose a priority tier</p></div><span class="icon">＋</span></div>
+      <label for="taskName">Task description</label><input id="taskName" value="Process customer request" maxlength="80">
+      <label for="priority">Priority</label><select id="priority"><option value="critical">Critical — high priority</option><option value="normal" selected>Normal — standard priority</option><option value="batch">Batch — background work</option></select>
+      <button class="primary full" onclick="submitTask()">＋ Add task to queue</button>
+      <div class="button-row"><button class="secondary" onclick="surge(10)">Generate 10-task surge</button><button class="secondary" onclick="surge(30)">Generate 30-task surge</button></div>
+      <div id="notice" class="notice">Ready for demonstration.</div>
+    </article>
+    <article class="panel">
+      <div class="panel-head"><div><h3>Scaling controller</h3><p>Compare scaling policies</p></div><span class="icon">↗</span></div>
+      <label for="strategy">Active strategy</label><select id="strategy" onchange="changeStrategy()">
+        <option value="kubequeue">KubeQueue — queue + forecast</option>
+        <option value="static">Static — fixed replicas</option>
+        <option value="hpa">HPA baseline — reactive load proxy</option>
+        <option value="keda">KEDA baseline — queue-depth reactive</option>
+      </select>
+      <div class="scale-box"><div><span>Estimated next arrivals</span><b id="forecast2">0</b></div><div><span>Recommended replicas</span><b id="replicas2">1</b></div></div>
+      <p class="explain" id="strategyText">KubeQueue considers both backlog and recent arrivals.</p>
+      <button class="primary full" onclick="processTasks()">▶ Process next consumer batch</button>
+      <div class="button-row"><button class="secondary" onclick="processCustom(1)">Process 1</button><button class="secondary" onclick="processCustom(10)">Process 10</button><button class="danger" onclick="resetDemo()">Reset demo</button></div>
+    </article>
+  </section>
+  <section class="grid two">
+    <article class="panel">
+      <div class="panel-head"><div><h3>Queue health</h3><p>Live waiting tasks by priority</p></div><span class="live">LIVE</span></div>
+      <div class="queue-list">
+        <div class="queue-row"><div class="priority-dot critical"></div><div class="queue-name">Critical <small>Weighted dispatch: 5</small></div><strong id="critical">0</strong><div class="bar"><i id="criticalBar" class="critical"></i></div></div>
+        <div class="queue-row"><div class="priority-dot normal"></div><div class="queue-name">Normal <small>Weighted dispatch: 3</small></div><strong id="normal">0</strong><div class="bar"><i id="normalBar" class="normal"></i></div></div>
+        <div class="queue-row"><div class="priority-dot batch"></div><div class="queue-name">Batch <small>Weighted dispatch: 1</small></div><strong id="batch">0</strong><div class="bar"><i id="batchBar" class="batch"></i></div></div>
+      </div>
+      <div class="chart-wrap"><div class="chart-title">Queue depth trend</div><canvas id="chart" width="640" height="180"></canvas></div>
+    </article>
+    <article class="panel">
+      <div class="panel-head"><div><h3>Recent activity</h3><p>Queue and scaling decisions</p></div></div>
+      <div id="events" class="events"><div class="empty">No events yet. Add tasks to begin.</div></div>
+    </article>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><div><h3>Recently completed tasks</h3><p>Latency is measured from submission to processing</p></div><span class="tag muted">BENCHMARK DATA</span></div>
+    <div class="table-wrap"><table><thead><tr><th>Task ID</th><th>Task</th><th>Priority</th><th>Submitted</th><th>Processed</th><th>Latency</th></tr></thead><tbody id="completed"><tr><td colspan="6" class="empty">No completed tasks yet.</td></tr></tbody></table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><h3>Scaling policy benchmark</h3><p>Transparent estimates based on the current demo backlog</p></div><button class="secondary" onclick="runBenchmark()">Run comparison</button></div>
+    <div class="table-wrap"><table><thead><tr><th>Strategy</th><th>Recommended replicas</th><th>Estimated batch capacity</th><th>Estimated drain time</th></tr></thead><tbody id="benchmark"><tr><td colspan="4" class="empty">Click Run comparison to calculate policy estimates.</td></tr></tbody></table></div>
+    <p class="explain" id="benchmarkNote">Estimates are not real cluster measurements or cloud costs.</p>
+  </section>
+  <section class="disclaimer"><strong>Prototype note:</strong> Queue state, forecast, and replica counts are simulated in this local app. HPA/KEDA entries are comparison baselines, not live Kubernetes integrations. Production extension: RabbitMQ/Kafka, Kubernetes API/KEDA, Prometheus and Grafana.</section>
+  <footer>KubeQueue · CNAD demonstration build · <span id="clock"></span></footer>
+</main>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body></html>

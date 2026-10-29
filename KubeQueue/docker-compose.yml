@@ -1,0 +1,31 @@
+services:
+  kubequeue:
+    build: .
+    container_name: kubequeue-demo
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: kubequeue-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - kubequeue
+    restart: unless-stopped
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: kubequeue-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: kubequeue123
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
